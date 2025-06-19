@@ -1,65 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Form, Input, Modal, message, Spin, Row, Col, Typography } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  Button, Card, Form, Input, Modal, message, Spin, Row, Col, Typography
+} from 'antd';
+import {
+  EditOutlined, DeleteOutlined, PlusOutlined
+} from '@ant-design/icons';
+import Products from '../Components/Products';
 
 const { Title } = Typography;
-
-const API = 'http://localhost:3000/api';
+const API = 'http://localhost:3000';
 
 const Content = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [editUser, setEditUser] = useState(null);
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API}/users`);
-      const data = await response.json();
-      console.log("Fetched Users:", data); 
+      const res = await fetch(`${API}/users`);
+      const data = await res.json();
       setUsers(data);
-    } catch (error) {
-      message.error('Failed to fetch users');
+    } catch {
+      message.error('Failed to load users');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
+      const method = editUser ? 'PUT' : 'POST';
+      const url = editUser ? `${API}/users/${editUser.id}` : `${API}/addUsers`;
 
-      const url = editingUser ? `${API}/users/${editingUser.id}` : `${API}/users`;
-      const method = editingUser ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          company: { name: values.companyName },
-        }),
+        body: JSON.stringify({ ...values }),
       });
 
-      const user = await response.json();
-      if (!response.ok) throw new Error();
+      const result = await res.json();
+      if (!res.ok) throw new Error();
 
-      setUsers((prev) =>
-        editingUser
-          ? prev.map((u) => (u.id === editingUser.id ? user : u))
-          : [...prev, user]
-      );
-      message.success(editingUser ? 'User updated' : 'User added');
-      setIsModalVisible(false);
-    } catch (error) {
-      message.error(`Failed to ${editingUser ? 'update' : 'add'} user`);
+      const updated = editUser
+        ? users.map((u) => (u.id === editUser.id ? result : u))
+        : [...users, result];
+
+      setUsers(updated);
+      message.success(editUser ? 'User updated' : 'User added');
+      setOpen(false);
+    } catch {
+      message.error('Error saving user');
     } finally {
       setLoading(false);
     }
@@ -70,10 +67,10 @@ const Content = () => {
       setLoading(true);
       const res = await fetch(`${API}/users/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
-      setUsers(users.filter((user) => user.id !== id));
+      setUsers(users.filter(u => u.id !== id));
       message.success('User deleted');
     } catch {
-      message.error('Failed to delete user');
+      message.error('Delete failed');
     } finally {
       setLoading(false);
     }
@@ -81,47 +78,42 @@ const Content = () => {
 
   const openModal = (user = null) => {
     form.resetFields();
-    if (user) {
-      form.setFieldsValue({
-        ...user,
-        companyName: user.company?.name,
-      });
-    }
-    setEditingUser(user);
-    setIsModalVisible(true);
+    setEditUser(user);
+    setOpen(true);
+    if (user) form.setFieldsValue(user);
   };
 
-  const validateEmail = (_, value) =>
-    !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-      ? Promise.resolve()
-      : Promise.reject(new Error('Invalid email'));
-
   return (
-    <div style={{ padding: 24 }}>
+    <div className="p-6 min-h-screen bg-gray-50">
       <div className="flex justify-between items-center mb-6">
-        <Title level={3}>User Management</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} disabled={loading}>
+        <Title level={3} className="!mb-0">User Management</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => openModal()}
+          loading={loading}
+          className="rounded-md"
+        >
           Add User
         </Button>
       </div>
 
-      {loading && users.length === 0 ? (
-        <div className="flex justify-center mt-20">
-          <Spin size="large" />
-        </div>
+      {loading && !users.length ? (
+        <div className="flex justify-center mt-20"><Spin size="large" /></div>
       ) : (
         <Row gutter={[16, 16]}>
-          {users.map((user) => (
-            <Col key={user.id} xs={24} sm={12} md={8} lg={6}>
+          {users.map(({ id, username, email, mobile }) => (
+            <Col key={id} xs={24} sm={12} md={8} lg={6}>
               <Card
-                title={user.name}
+                title={username}
                 actions={[
-                  <EditOutlined key="edit" onClick={() => openModal(user)} />,
-                  <DeleteOutlined key="delete" onClick={() => handleDelete(user.id)} />,
+                  <EditOutlined key="edit" onClick={() => openModal({ id, username, email, mobile })} />,
+                  <DeleteOutlined key="delete" onClick={() => handleDelete(id)} />
                 ]}
+                className="shadow-sm rounded"
               >
-                <p><strong>Email:</strong> {user.email}</p>
-                <p><strong>Phone:</strong> {user.phone}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Mobile:</strong> {mobile}</p>
               </Card>
             </Col>
           ))}
@@ -129,25 +121,33 @@ const Content = () => {
       )}
 
       <Modal
-        title={editingUser ? 'Edit User' : 'Add User'}
-        open={isModalVisible}
-        onOk={handleSubmit}
-        onCancel={() => setIsModalVisible(false)}
+        open={open}
+        title={editUser ? 'Edit User' : 'Add User'}
+        onCancel={() => setOpen(false)}
+        onOk={handleSave}
         confirmLoading={loading}
-        okText={editingUser ? 'Update' : 'Add'}
+        okText={editUser ? 'Update' : 'Add'}
       >
-        <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="userName" label="Username" rules={[{ required: true }]}>
-            <Input placeholder="Enter username" />
+        <Form form={form} layout="vertical">
+          <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+            <Input placeholder="Enter name" />
           </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ required: true }, { validator: validateEmail }]}>
-            <Input type="email" placeholder="Enter email" />
+          <Form.Item name="email" label="Email" rules={[
+            { required: true },
+            { type: 'email', message: 'Invalid email' }
+          ]}>
+            <Input placeholder="Enter email" />
           </Form.Item>
-          <Form.Item name="phone" label="Phone" rules={[{ required: true }]}>
-            <Input placeholder="Enter phone number" />
+          <Form.Item name="mobile" label="Mobile Number" rules={[{ required: true }]}>
+            <Input placeholder="Enter mobile" />
+          </Form.Item>
+          <Form.Item name="password" label="Password" rules={[{ required: !editUser }]}>
+            <Input.Password placeholder={editUser ? "Leave blank to keep unchanged" : "Enter password"} />
           </Form.Item>
         </Form>
       </Modal>
+
+      <Products />
     </div>
   );
 };

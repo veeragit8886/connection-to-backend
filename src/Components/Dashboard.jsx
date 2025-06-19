@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Layout, Menu, theme } from 'antd';
 import Content from '../Components/Content';
+// import Products from '../Components/Products';
 const { Header, Sider} = Layout;
 
 const App = () => {
@@ -89,6 +90,7 @@ const App = () => {
           }}
         >
           <Content/>
+          
         </Content>
       </Layout>
     </Layout>

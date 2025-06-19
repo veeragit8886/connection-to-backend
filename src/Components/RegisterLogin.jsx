@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const RegisterLogin = () => {
   const [isActive, setIsActive] = useState(false);
-  const navigate = useNavigate("")
+  const navigate = useNavigate()
 
   const [registerData, setRegisterData] = useState({
     username: '',
@@ -30,7 +30,7 @@ const RegisterLogin = () => {
     e.preventDefault();
     localStorage.setItem('user', JSON.stringify(registerData));
     try {
-      const res = await fetch('http://localhost:3000/api/register', {
+      const res = await fetch('http://localhost:3000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(registerData),
@@ -45,22 +45,23 @@ const RegisterLogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3000/api/login', {
+      const res = await fetch('http://localhost:3000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData),
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok) {
         localStorage.setItem('user', JSON.stringify(data.user));
         alert("Login successful");
+        navigate("/dashboard")
       } else {
         alert(data.message || "Login failed");
       }
     } catch (err) {
       alert("Login error");
     }
-    navigate("/dashboard")
+    
   };
 
   return (
