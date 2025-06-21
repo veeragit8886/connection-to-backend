@@ -5,7 +5,11 @@ import {
 import {
   EditOutlined, DeleteOutlined, PlusOutlined
 } from '@ant-design/icons';
+<<<<<<< HEAD
 import Sidebar from './Sidebar';
+=======
+import Products from '../Components/Products';
+>>>>>>> 2625ab5b886ab2504087600db3faff1f95a38f0d
 
 const { Title } = Typography;
 const API = 'http://localhost:3000';
@@ -84,6 +88,7 @@ const Content = () => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar */}
       <aside className="w-64 fixed inset-y-0 left-0 bg-white border-r border-gray-200 shadow-md z-10">
@@ -178,6 +183,72 @@ const Content = () => {
           </Form>
         </Modal>
       </main>
+=======
+    <div className="p-6 min-h-screen bg-gray-50">
+      <div className="flex justify-between items-center mb-6">
+        <Title level={3} className="!mb-0">User Management</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => openModal()}
+          loading={loading}
+          className="rounded-md"
+        >
+          Add User
+        </Button>
+      </div>
+
+      {loading && !users.length ? (
+        <div className="flex justify-center mt-20"><Spin size="large" /></div>
+      ) : (
+        <Row gutter={[16, 16]}>
+          {users.map(({ id, username, email, mobile }) => (
+            <Col key={id} xs={24} sm={12} md={8} lg={6}>
+              <Card
+                title={username}
+                actions={[
+                  <EditOutlined key="edit" onClick={() => openModal({ id, username, email, mobile })} />,
+                  <DeleteOutlined key="delete" onClick={() => handleDelete(id)} />
+                ]}
+                className="shadow-sm rounded"
+              >
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Mobile:</strong> {mobile}</p>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+
+      <Modal
+        open={open}
+        title={editUser ? 'Edit User' : 'Add User'}
+        onCancel={() => setOpen(false)}
+        onOk={handleSave}
+        confirmLoading={loading}
+        okText={editUser ? 'Update' : 'Add'}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+            <Input placeholder="Enter name" />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[
+            { required: true },
+            { type: 'email', message: 'Invalid email' }
+          ]}>
+            <Input placeholder="Enter email" />
+          </Form.Item>
+          <Form.Item name="mobile" label="Mobile Number" rules={[{ required: true }]}>
+            <Input placeholder="Enter mobile" />
+          </Form.Item>
+          <Form.Item name="password" label="Password" rules={[{ required: !editUser }]}>
+            <Input.Password placeholder={editUser ? "Leave blank to keep unchanged" : "Enter password"} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Products />
+>>>>>>> 2625ab5b886ab2504087600db3faff1f95a38f0d
     </div>
   );
 };
